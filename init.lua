@@ -11,10 +11,10 @@ local MyActor    = nil
 local Boxes      = {}  -- holds actors data
 Boxes[MyName]    = nil -- holds my data
 local ActorsList = {}  -- holds the list of actors
+local lastCheck  = 0
 
-
-local isRunning = true
-local ShowMain  = false
+local isRunning  = true
+local ShowMain   = false
 
 --- Sort the actors list alphabetically.
 local function SortActors()
@@ -28,6 +28,17 @@ local function SortActors()
 end
 
 -- ACTORS --
+
+local function CheckIn()
+	if MyActor then
+		MyActor:send({ mailbox = 'actorswitcher', }, {
+			Subject = 'Hello',
+			From = MyName,
+			Class = MyClass,
+		})
+	end
+	lastCheck = os.time()
+end
 
 local function ActorsHandler()
 	MyActor = Actors.register('actorswitcher', function(message)
@@ -53,6 +64,7 @@ local function ActorsHandler()
 		end
 	end)
 end
+
 
 local function CommandHandler(...)
 	local args = { ..., }
@@ -115,6 +127,9 @@ local function Main()
 	while isRunning do
 		mq.delay(100)
 		SortActors()
+		if os.time() - lastCheck > 10 then
+			CheckIn()
+		end
 	end
 	mq.unbind("/aswitch")
 end
